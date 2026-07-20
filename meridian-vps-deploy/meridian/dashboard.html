@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian — Client Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-950:#0B1526; --navy-900:#101B30; --navy-800:#16233D;
+    --gold:#B8955C; --gold-light:#D9C29A; --gold-tint:#F3EDE1;
+    --bg:#F7F6F2; --card:#FFFFFF; --ink:#16233D; --muted:#6B7280; --line:#E5E3DC;
+    --success:#2F7D5C; --success-tint:#E6F0EA; --danger:#B54A3F; --danger-tint:#F7E9E6;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,.display{ font-family:'Newsreader',serif; letter-spacing:-0.01em; }
+  .mono{ font-family:'JetBrains Mono',monospace; }
+  a{ color:inherit; text-decoration:none; }
+  button{ font-family:'Inter'; }
+
+  .app{ display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
+
+  /* SIDEBAR */
+  .sidebar{ background:var(--navy-950); color:#EFEDE6; padding:26px 20px; display:flex; flex-direction:column; }
+  .logo{ display:flex; align-items:center; gap:9px; font-size:17px; font-weight:600; font-family:'Newsreader',serif; color:#fff; margin-bottom:40px; padding:0 6px; }
+  .logo-mark{ width:19px; height:19px; border:1.5px solid var(--gold); transform:rotate(45deg); position:relative; }
+  .logo-mark::after{ content:""; position:absolute; inset:3px; background:var(--gold); }
+  .side-nav{ display:flex; flex-direction:column; gap:2px; }
+  .side-link{ padding:11px 12px; border-radius:6px; font-size:13.5px; color:rgba(239,237,230,0.65); display:flex; align-items:center; gap:11px; }
+  .side-link svg{ width:17px; height:17px; flex-shrink:0; }
+  .side-link:hover{ color:#fff; background:rgba(255,255,255,0.05); }
+  .side-link.active{ color:#fff; background:rgba(184,149,92,0.16); }
+  .side-foot{ margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); }
+  .side-foot a{ font-size:12.5px; color:rgba(239,237,230,0.5); }
+  .side-foot a:hover{ color:#fff; }
+
+  /* MAIN */
+  .main{ padding:34px 42px 60px; }
+  .topbar{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; flex-wrap:wrap; gap:16px; }
+  .topbar .greet{ font-size:12.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; margin-bottom:6px; }
+  .topbar h1{ font-size:28px; margin:0; font-weight:500; }
+  .risk-badge{ display:inline-flex; align-items:center; gap:6px; background:var(--gold-tint); color:#8A6A32; font-size:12px; font-weight:700; padding:6px 13px; border-radius:100px; margin-top:10px; }
+
+  .kpi-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+  .kpi{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:20px; }
+  .kpi .l{ font-size:12px; color:var(--muted); margin-bottom:8px; }
+  .kpi .n{ font-family:'Newsreader',serif; font-size:24px; font-weight:500; }
+  .kpi .delta{ font-size:12px; font-weight:700; margin-left:6px; }
+  .kpi .delta.up{ color:var(--success); }
+  .kpi .delta.down{ color:var(--danger); }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  .grid-2{ display:grid; grid-template-columns:1.4fr 1fr; gap:20px; margin-bottom:20px; align-items:stretch; }
+  .panel{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:26px; }
+  .panel h3{ font-size:16px; margin:0 0 4px; font-weight:600; font-family:'Inter'; }
+  .panel .sub{ font-size:12.5px; color:var(--muted); margin:0 0 18px; }
+
+  .chart-box{ height:200px; }
+  .chart-box svg{ width:100%; height:100%; overflow:visible; }
+
+  .alloc-row{ display:flex; align-items:center; gap:14px; }
+  .donut{ width:130px; height:130px; flex-shrink:0; }
+  .alloc-legend{ display:grid; gap:10px; flex-grow:1; }
+  .alloc-item{ display:flex; align-items:center; justify-content:space-between; font-size:13px; }
+  .alloc-item .lbl{ display:flex; align-items:center; gap:8px; }
+  .swatch{ width:9px; height:9px; border-radius:2px; }
+  .alloc-item .pct{ font-family:'JetBrains Mono'; font-weight:600; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); padding:0 0 10px; font-weight:600; border-bottom:1px solid var(--line); }
+  td{ padding:12px 0; border-bottom:1px solid var(--line); }
+  tr:last-child td{ border-bottom:none; }
+  .asset-name{ font-weight:600; }
+  .asset-ticker{ font-family:'JetBrains Mono'; font-size:11.5px; color:var(--muted); }
+  .ret-pos{ color:var(--success); font-weight:600; }
+  .ret-neg{ color:var(--danger); font-weight:600; }
+
+  .tx-row{ display:flex; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .tx-row:last-child{ border-bottom:none; }
+  .tx-left .d{ font-weight:600; }
+  .tx-left .m{ font-size:11.5px; color:var(--muted); font-family:'JetBrains Mono'; }
+
+  @media (max-width:980px){
+    .app{ grid-template-columns:1fr; }
+    .sidebar{ display:none; }
+    .kpi-row{ grid-template-columns:1fr 1fr; }
+    .grid-2{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><span class="logo-mark"></span> Meridian</div>
+    <nav class="side-nav">
+      <div class="side-link active" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg> Dashboard</div>
+      <div class="side-link" data-view="portfolio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l6-6 4 4 8-8"/></svg> Portfolio</div>
+      <div class="side-link" data-view="transactions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg> Transactions</div>
+      <div class="side-link" data-view="documents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h4"/></svg> Documents</div>
+      <div class="side-link" data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 01-4 0v-.09A1.7 1.7 0 009 19.4a1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-1.55-1H3a2 2 0 010-4h.09A1.7 1.7 0 004.6 9a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 009 4.6a1.7 1.7 0 001-1.55V3a2 2 0 014 0v.09A1.7 1.7 0 0015 4.6a1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06A1.7 1.7 0 0019.4 9c.36.3.86.5 1.55.5H21a2 2 0 010 4h-.09a1.7 1.7 0 00-1.55 1z"/></svg> Settings</div>
+    </nav>
+    <div class="side-foot"><a href="index.html">← Back to Meridian</a></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="greet">Welcome back</div>
+        <h1 id="clientNameHeading">Thandiwe Mokoena</h1>
+        <div class="risk-badge" id="riskBadge">Balanced profile</div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="kpi-row">
+        <div class="kpi"><div class="l">Total portfolio value</div><div class="n" id="kpiValue">R0</div></div>
+        <div class="kpi"><div class="l">This month</div><div class="n" id="kpiMonth">+R0 <span class="delta up" id="kpiMonthPct">↑ 0%</span></div></div>
+        <div class="kpi"><div class="l">Total return (YTD)</div><div class="n" id="kpiYtd">+0%</div></div>
+        <div class="kpi"><div class="l">Monthly contribution</div><div class="n" id="kpiContrib">R0</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Performance — last 12 months</h3>
+          <p class="sub">Portfolio value over time</p>
+          <div class="chart-box">
+            <svg viewBox="0 0 600 200" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="perfFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#B8955C" stop-opacity="0.35"/>
+                  <stop offset="100%" stop-color="#B8955C" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <polyline id="perfArea" points="" fill="url(#perfFill)" stroke="none"/>
+              <polyline id="perfLine" points="" fill="none" stroke="#B8955C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Asset allocation</h3>
+          <p class="sub">Current mix</p>
+          <div class="alloc-row">
+            <svg class="donut" viewBox="0 0 36 36" id="donutSvg"></svg>
+            <div class="alloc-legend" id="allocLegend"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Holdings</h3>
+          <p class="sub">Current positions in this portfolio</p>
+          <table>
+            <thead><tr><th>Asset</th><th>Value</th><th>Allocation</th><th>Return</th></tr></thead>
+            <tbody id="holdingsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h3>Recent transactions</h3>
+          <p class="sub">Last 5 account activities</p>
+          <div id="txList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="view" id="view-portfolio">
+      <div class="panel">
+        <h3>Full holdings breakdown</h3>
+        <p class="sub">Every position in this account, with allocation and return</p>
+        <table>
+          <thead><tr><th>Asset</th><th>Value</th><th>Allocation</th><th>Return</th></tr></thead>
+          <tbody id="holdingsBodyFull"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="view" id="view-transactions">
+      <div class="panel">
+        <h3>Transaction history</h3>
+        <p class="sub">All recorded account activity</p>
+        <div id="txListFull"></div>
+      </div>
+    </div>
+
+    <!-- DOCUMENTS -->
+    <div class="view" id="view-documents">
+      <div class="panel">
+        <h3 style="margin-bottom:16px;">Account documents</h3>
+        <div id="docList" style="display:grid;gap:10px;"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="view" id="view-settings">
+      <div class="panel" style="max-width:480px;">
+        <h3 style="margin-bottom:18px;">Account settings</h3>
+        <div style="display:grid;gap:14px;">
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--navy-800);margin-bottom:6px;">Full name</label>
+            <input type="text" id="settingsName" style="width:100%;font-family:'Inter';font-size:14px;padding:11px 13px;border-radius:5px;border:1px solid var(--line);background:var(--bg);">
+          </div>
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--navy-800);margin-bottom:6px;">Notification email</label>
+            <input type="email" id="settingsEmail" style="width:100%;font-family:'Inter';font-size:14px;padding:11px 13px;border-radius:5px;border:1px solid var(--line);background:var(--bg);">
+          </div>
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--navy-800);margin-bottom:6px;">Statement frequency</label>
+            <select style="width:100%;font-family:'Inter';font-size:14px;padding:11px 13px;border-radius:5px;border:1px solid var(--line);background:var(--bg);">
+              <option>Monthly</option>
+              <option>Quarterly</option>
+              <option>Annually</option>
+            </select>
+          </div>
+          <button class="btn btn-gold" id="saveClientSettingsBtn" style="border:none;cursor:pointer;margin-top:6px;">Save changes</button>
+          <div id="clientSettingsSaved" style="display:none;font-size:12.5px;color:var(--success);font-weight:600;">✓ Saved</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  /* pull the most recently onboarded client, or fall back to a sample */
+  let client = null;
+  try{ client = JSON.parse(localStorage.getItem('meridian_active_client')); }catch(e){}
+  const fallback = { name:'Thandiwe Mokoena', riskProfile:'Balanced', initialDeposit:250000, monthlyContribution:8000 };
+  const c = client || fallback;
+
+  document.getElementById('clientNameHeading').textContent = c.name;
+  document.getElementById('riskBadge').textContent = (c.riskProfile || 'Balanced') + ' profile';
+
+  const baseValue = Math.max(c.initialDeposit || 250000, 120000);
+  const portfolioValue = Math.round(baseValue * 1.14);
+  const monthGain = Math.round(portfolioValue * 0.021);
+  const ytdReturn = 11.4;
+
+  document.getElementById('kpiValue').textContent = 'R' + portfolioValue.toLocaleString();
+  document.getElementById('kpiMonth').innerHTML = '+R' + monthGain.toLocaleString() + ' <span class="delta up">↑ 2.1%</span>';
+  document.getElementById('kpiYtd').textContent = '+' + ytdReturn + '%';
+  document.getElementById('kpiContrib').textContent = 'R' + (c.monthlyContribution || 8000).toLocaleString();
+
+  /* performance chart */
+  const months = 12;
+  let pts = [];
+  let v = baseValue * 0.86;
+  for(let i=0;i<=months;i++){
+    v += v * (0.006 + Math.sin(i*0.7)*0.004) + (Math.random()*400-100);
+    pts.push(v);
+  }
+  const maxV = Math.max(...pts), minV = Math.min(...pts);
+  const linePoints = pts.map((val,i)=>{
+    const x = (i/(pts.length-1))*600;
+    const y = 190 - ((val-minV)/(maxV-minV))*170;
+    return `${x},${y}`;
+  }).join(' ');
+  const areaPoints = linePoints + ` 600,200 0,200`;
+  document.getElementById('perfLine').setAttribute('points', linePoints);
+  document.getElementById('perfArea').setAttribute('points', areaPoints);
+
+  /* allocation donut */
+  const allocation = [
+    { label:'Equities', pct:48, color:'#B8955C' },
+    { label:'Fixed income', pct:26, color:'#16233D' },
+    { label:'Property', pct:14, color:'#6B8F71' },
+    { label:'Cash', pct:12, color:'#C9C4B6' }
+  ];
+  let cumulative = 0;
+  const donut = document.getElementById('donutSvg');
+  allocation.forEach(a=>{
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx','18'); circle.setAttribute('cy','18'); circle.setAttribute('r','15.9');
+    circle.setAttribute('fill','none');
+    circle.setAttribute('stroke', a.color);
+    circle.setAttribute('stroke-width','5');
+    circle.setAttribute('stroke-dasharray', `${a.pct} ${100-a.pct}`);
+    circle.setAttribute('stroke-dashoffset', 25 - cumulative);
+    cumulative += a.pct;
+    donut.appendChild(circle);
+  });
+  document.getElementById('allocLegend').innerHTML = allocation.map(a=>
+    `<div class="alloc-item"><span class="lbl"><span class="swatch" style="background:${a.color}"></span>${a.label}</span><span class="pct">${a.pct}%</span></div>`
+  ).join('');
+
+  /* holdings table */
+  const holdings = [
+    { name:'Global Equity Fund', ticker:'GEF', value: Math.round(portfolioValue*0.30), pct:30, ret: 14.2 },
+    { name:'SA Top 40 Tracker', ticker:'STX40', value: Math.round(portfolioValue*0.18), pct:18, ret: 9.6 },
+    { name:'Government Bond Fund', ticker:'GBF', value: Math.round(portfolioValue*0.26), pct:26, ret: 6.1 },
+    { name:'Listed Property Fund', ticker:'LPF', value: Math.round(portfolioValue*0.14), pct:14, ret: -2.3 },
+    { name:'Money Market Fund', ticker:'MMF', value: Math.round(portfolioValue*0.12), pct:12, ret: 8.2 }
+  ];
+  document.getElementById('holdingsBody').innerHTML = holdings.map(h=>`
+    <tr>
+      <td><div class="asset-name">${h.name}</div><div class="asset-ticker">${h.ticker}</div></td>
+      <td class="mono">R${h.value.toLocaleString()}</td>
+      <td class="mono">${h.pct}%</td>
+      <td class="${h.ret>=0?'ret-pos':'ret-neg'}">${h.ret>=0?'+':''}${h.ret}%</td>
+    </tr>`).join('');
+
+  document.getElementById('holdingsBodyFull').innerHTML = document.getElementById('holdingsBody').innerHTML;
+
+  /* transactions */
+  const txs = [
+    { d:'Monthly contribution', m:'Debit order · Jul 01', amt:c.monthlyContribution||8000, pos:true },
+    { d:'Dividend — Global Equity Fund', m:'Reinvested · Jun 28', amt:1240, pos:true },
+    { d:'Rebalance — sold Property Fund', m:'Automated · Jun 15', amt:-6200, pos:false },
+    { d:'Rebalance — bought SA Top 40', m:'Automated · Jun 15', amt:6200, pos:true },
+    { d:'Advisory fee', m:'Monthly · Jun 01', amt:-410, pos:false }
+  ];
+  const txsFull = [
+    ...txs,
+    { d:'Monthly contribution', m:'Debit order · Jun 01', amt:c.monthlyContribution||8000, pos:true },
+    { d:'Dividend — Government Bond Fund', m:'Reinvested · May 30', amt:860, pos:true },
+    { d:'Advisory fee', m:'Monthly · May 01', amt:-410, pos:false },
+    { d:'Monthly contribution', m:'Debit order · May 01', amt:c.monthlyContribution||8000, pos:true },
+    { d:'Initial deposit', m:'Account opened · Apr 12', amt:c.initialDeposit||250000, pos:true }
+  ];
+  function renderTxRows(list, elId){
+    document.getElementById(elId).innerHTML = list.map(t=>`
+      <div class="tx-row">
+        <div class="tx-left"><div class="d">${t.d}</div><div class="m">${t.m}</div></div>
+        <div class="${t.pos?'ret-pos':'ret-neg'} mono">${t.pos?'+':''}R${Math.abs(t.amt).toLocaleString()}</div>
+      </div>`).join('');
+  }
+  renderTxRows(txs, 'txList');
+  renderTxRows(txsFull, 'txListFull');
+
+  /* documents */
+  const docs = [
+    { name:'ID or passport copy', status:'Verified' },
+    { name:'Proof of address', status:'Verified' },
+    { name:'Source of funds declaration', status:'Pending advisor sign-off' },
+    { name:'Signed investment mandate', status:'Verified' }
+  ];
+  document.getElementById('docList').innerHTML = docs.map(d=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border:1px solid var(--line);border-radius:6px;">
+      <div style="font-size:13.5px;font-weight:600;">${d.name}</div>
+      <span class="badge ${d.status==='Verified' ? 'active' : 'pending'}" style="font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:100px;text-transform:uppercase;letter-spacing:0.03em;background:${d.status==='Verified'?'var(--success-tint)':'var(--gold-tint)'};color:${d.status==='Verified'?'var(--success)':'#8A6A32'};">${d.status}</span>
+    </div>`).join('');
+
+  /* settings prefill */
+  document.getElementById('settingsName').value = c.name || '';
+  document.getElementById('settingsEmail').value = c.email || '';
+  document.getElementById('saveClientSettingsBtn').addEventListener('click', ()=>{
+    const saved = document.getElementById('clientSettingsSaved');
+    saved.style.display = 'block';
+    setTimeout(()=>{ saved.style.display = 'none'; }, 2200);
+  });
+
+  /* ---------------- sidebar view switching ---------------- */
+  const viewGreet = {
+    dashboard:'Welcome back', portfolio:'Your portfolio', transactions:'Transaction history',
+    documents:'Account documents', settings:'Account settings'
+  };
+  document.querySelectorAll('.side-link[data-view]').forEach(link=>{
+    link.addEventListener('click', ()=>{
+      const target = link.dataset.view;
+      document.querySelectorAll('.side-link[data-view]').forEach(l=>l.classList.remove('active'));
+      link.classList.add('active');
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById('view-'+target).classList.add('active');
+      document.querySelector('.topbar .greet').textContent = viewGreet[target];
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+</script>
+
+</body>
+</html>

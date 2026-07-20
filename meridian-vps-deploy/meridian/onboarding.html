@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian — Client Onboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-950:#0B1526; --navy-900:#101B30; --navy-800:#16233D;
+    --gold:#B8955C; --gold-light:#D9C29A; --gold-tint:#F3EDE1;
+    --bg:#F7F6F2; --card:#FFFFFF; --ink:#16233D; --muted:#6B7280; --line:#E5E3DC;
+    --success:#2F7D5C; --success-tint:#E6F0EA; --danger:#B54A3F; --danger-tint:#F7E9E6;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,.display{ font-family:'Newsreader',serif; letter-spacing:-0.01em; }
+  .mono{ font-family:'JetBrains Mono',monospace; }
+  a{ color:inherit; text-decoration:none; }
+  button{ font-family:'Inter'; }
+
+  header{ background:var(--navy-950); }
+  .nav-wrap{ max-width:1180px; margin:0 auto; padding:18px 28px; display:flex; align-items:center; justify-content:space-between; }
+  .logo{ display:flex; align-items:center; gap:10px; font-size:18px; font-weight:600; font-family:'Newsreader',serif; color:#fff; }
+  .logo-mark{ width:20px; height:20px; border:1.5px solid var(--gold); transform:rotate(45deg); position:relative; }
+  .logo-mark::after{ content:""; position:absolute; inset:4px; background:var(--gold); }
+  .exit-link{ font-size:13.5px; color:rgba(255,255,255,0.6); }
+  .exit-link:hover{ color:#fff; }
+
+  .wrap{ max-width:720px; margin:0 auto; padding:52px 24px 100px; }
+
+  .progress-rail{ display:flex; gap:6px; margin-bottom:8px; }
+  .prog-seg{ height:3px; flex:1; background:var(--line); border-radius:2px; overflow:hidden; }
+  .prog-seg span{ display:block; height:100%; width:0%; background:var(--gold); transition:width .3s ease; }
+  .prog-seg.done span, .prog-seg.active span{ width:100%; }
+  .step-label{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:34px; font-weight:600; }
+  .step-label .mono{ color:var(--gold); }
+
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:38px; }
+  .card h2{ font-size:26px; margin:0 0 8px; font-weight:500; }
+  .card .sub{ font-size:14px; color:var(--muted); margin:0 0 30px; }
+
+  .form-panel{ display:none; }
+  .form-panel.active{ display:block; }
+
+  .field{ margin-bottom:20px; }
+  .field label{ display:block; font-size:12.5px; font-weight:600; color:var(--navy-800); margin-bottom:7px; }
+  .field input, .field select, .field textarea{
+    width:100%; font-family:'Inter'; font-size:14px; padding:12px 14px; border-radius:5px;
+    border:1px solid var(--line); background:var(--bg); color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--gold); background:#fff; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+  .option-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .option-card{ border:1px solid var(--line); border-radius:6px; padding:16px; cursor:pointer; transition:all .15s ease; }
+  .option-card:hover{ border-color:var(--gold); }
+  .option-card.selected{ border-color:var(--gold); background:var(--gold-tint); }
+  .option-card .ot{ font-size:14px; font-weight:600; margin-bottom:3px; }
+  .option-card .od{ font-size:12px; color:var(--muted); }
+
+  .goal-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:22px; }
+  .goal-chip{ border:1px solid var(--line); border-radius:6px; padding:13px 16px; cursor:pointer; font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:10px; }
+  .goal-chip .box{ width:16px; height:16px; border:1.5px solid var(--line); border-radius:3px; flex-shrink:0; position:relative; }
+  .goal-chip.selected{ border-color:var(--gold); background:var(--gold-tint); }
+  .goal-chip.selected .box{ background:var(--gold); border-color:var(--gold); }
+  .goal-chip.selected .box::after{ content:""; position:absolute; left:4px; top:1px; width:4px; height:8px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+
+  .upload-row{ border:1px dashed var(--line); border-radius:6px; padding:20px; display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; cursor:pointer; }
+  .upload-row:hover{ border-color:var(--gold); }
+  .upload-row.uploaded{ border-style:solid; border-color:var(--success); background:var(--success-tint); }
+  .upload-left{ display:flex; align-items:center; gap:12px; }
+  .upload-left svg{ width:20px; height:20px; color:var(--muted); }
+  .upload-row.uploaded .upload-left svg{ color:var(--success); }
+  .upload-name{ font-size:13.5px; font-weight:600; }
+  .upload-hint{ font-size:11.5px; color:var(--muted); }
+  .upload-status{ font-size:12px; font-weight:600; color:var(--gold); }
+  .upload-row.uploaded .upload-status{ color:var(--success); }
+
+  .review-block{ border-top:1px solid var(--line); padding-top:18px; margin-top:4px; }
+  .review-row{ display:flex; justify-content:space-between; padding:9px 0; font-size:13.5px; border-bottom:1px solid var(--line); }
+  .review-row:last-child{ border-bottom:none; }
+  .review-row .k{ color:var(--muted); }
+  .review-row .v{ font-weight:600; text-align:right; }
+
+  .btn-row{ display:flex; gap:12px; margin-top:32px; }
+  .btn{ font-size:14px; font-weight:600; padding:13px 24px; border-radius:5px; cursor:pointer; border:none; }
+  .btn-gold{ background:var(--gold); color:var(--navy-950); flex:1; }
+  .btn-gold:hover{ background:#a5824c; }
+  .btn-gold:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn-back{ background:transparent; border:1px solid var(--line); color:var(--ink); }
+  .btn-back:hover{ border-color:var(--gold); }
+
+  .risk-result{ margin-top:20px; padding:16px 18px; border-radius:6px; background:var(--gold-tint); border:1px solid var(--gold-light); display:none; }
+  .risk-result.show{ display:block; }
+  .risk-result .rk{ font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--gold); font-weight:700; }
+  .risk-result .rv{ font-family:'Newsreader',serif; font-size:20px; margin-top:4px; }
+
+  /* CONFIRMATION */
+  .confirm-view{ text-align:center; display:none; }
+  .confirm-view.show{ display:block; }
+  .confirm-icon{ width:56px; height:56px; border-radius:50%; background:var(--success-tint); color:var(--success); display:flex; align-items:center; justify-content:center; margin:0 auto 22px; }
+  .confirm-icon svg{ width:26px; height:26px; }
+  .confirm-view h2{ margin-bottom:10px; }
+  .confirm-view p{ color:var(--muted); font-size:14.5px; margin:0 0 28px; }
+  .confirm-id{ font-family:'JetBrains Mono'; font-size:13px; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:14px; margin-bottom:26px; }
+  .confirm-actions{ display:flex; gap:12px; }
+  .confirm-actions .btn{ flex:1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-wrap">
+    <a href="index.html" class="logo"><span class="logo-mark"></span> Meridian</a>
+    <a href="index.html" class="exit-link">Save &amp; exit</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="progress-rail">
+    <div class="prog-seg active" id="seg1"><span></span></div>
+    <div class="prog-seg" id="seg2"><span></span></div>
+    <div class="prog-seg" id="seg3"><span></span></div>
+    <div class="prog-seg" id="seg4"><span></span></div>
+    <div class="prog-seg" id="seg5"><span></span></div>
+  </div>
+  <div class="step-label"><span class="mono" id="stepCounter">Step 1 / 5</span> — Client onboarding</div>
+
+  <div class="card">
+
+    <!-- STEP 1: PERSONAL -->
+    <div class="form-panel active" id="panel1">
+      <h2>Personal details</h2>
+      <p class="sub">We'll use this to verify identity and set up the client account.</p>
+      <div class="field-row">
+        <div class="field"><label>Full legal name</label><input type="text" id="fName" placeholder="Thandiwe Mokoena"></div>
+        <div class="field"><label>Date of birth</label><input type="date" id="fDob"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Email address</label><input type="email" id="fEmail" placeholder="thandiwe@email.com"></div>
+        <div class="field"><label>Phone number</label><input type="tel" id="fPhone" placeholder="+27 82 000 0000"></div>
+      </div>
+      <div class="field"><label>ID / passport number</label><input type="text" id="fId" placeholder="0000000000000"></div>
+      <div class="field"><label>Residential address</label><textarea id="fAddress" rows="2" placeholder="Street, suburb, city, postal code"></textarea></div>
+      <div class="btn-row"><button class="btn btn-gold" id="next1">Continue</button></div>
+    </div>
+
+    <!-- STEP 2: RISK PROFILE -->
+    <div class="form-panel" id="panel2">
+      <h2>Risk profile</h2>
+      <p class="sub">A few questions to understand comfort with market movement.</p>
+
+      <div class="field"><label>If your portfolio dropped 15% in a month, you would:</label>
+        <div class="option-grid" id="q1">
+          <div class="option-card" data-q="q1" data-v="1"><div class="ot">Sell immediately</div><div class="od">Protect what's left</div></div>
+          <div class="option-card" data-q="q1" data-v="2"><div class="ot">Sell some</div><div class="od">Reduce exposure</div></div>
+          <div class="option-card" data-q="q1" data-v="3"><div class="ot">Hold steady</div><div class="od">Ride it out</div></div>
+          <div class="option-card" data-q="q1" data-v="4"><div class="ot">Buy more</div><div class="od">See it as a discount</div></div>
+        </div>
+      </div>
+
+      <div class="field"><label>Primary investment horizon:</label>
+        <div class="option-grid" id="q2">
+          <div class="option-card" data-q="q2" data-v="1"><div class="ot">Under 2 years</div></div>
+          <div class="option-card" data-q="q2" data-v="2"><div class="ot">2 – 5 years</div></div>
+          <div class="option-card" data-q="q2" data-v="3"><div class="ot">5 – 10 years</div></div>
+          <div class="option-card" data-q="q2" data-v="4"><div class="ot">10+ years</div></div>
+        </div>
+      </div>
+
+      <div class="risk-result" id="riskResult">
+        <div class="rk">Calculated risk profile</div>
+        <div class="rv" id="riskValue">—</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-back" id="back2">Back</button>
+        <button class="btn btn-gold" id="next2" disabled>Continue</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: GOALS -->
+    <div class="form-panel" id="panel3">
+      <h2>Investment goals</h2>
+      <p class="sub">Select everything that applies — this shapes the portfolio recommendation.</p>
+      <div class="goal-grid" id="goalGrid">
+        <div class="goal-chip" data-goal="Retirement"><span class="box"></span> Retirement</div>
+        <div class="goal-chip" data-goal="Wealth growth"><span class="box"></span> Wealth growth</div>
+        <div class="goal-chip" data-goal="Education funding"><span class="box"></span> Education funding</div>
+        <div class="goal-chip" data-goal="Estate planning"><span class="box"></span> Estate planning</div>
+        <div class="goal-chip" data-goal="Passive income"><span class="box"></span> Passive income</div>
+        <div class="goal-chip" data-goal="Major purchase"><span class="box"></span> Major purchase</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Initial deposit (ZAR)</label><input type="number" id="fDeposit" placeholder="250000"></div>
+        <div class="field"><label>Planned monthly contribution (ZAR)</label><input type="number" id="fMonthly" placeholder="8000"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-back" id="back3">Back</button>
+        <button class="btn btn-gold" id="next3">Continue</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: DOCUMENTS -->
+    <div class="form-panel" id="panel4">
+      <h2>Verification documents</h2>
+      <p class="sub">Click each item to simulate an upload for this demo.</p>
+
+      <div class="upload-row" id="doc1" data-doc="ID document">
+        <div class="upload-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M14 10h4M14 14h4M5 17c1-2 3-3 4-3s3 1 4 3"/></svg>
+          <div><div class="upload-name">ID or passport copy</div><div class="upload-hint">PDF, JPG or PNG · max 10MB</div></div>
+        </div>
+        <div class="upload-status">Click to upload</div>
+      </div>
+
+      <div class="upload-row" id="doc2" data-doc="Proof of address">
+        <div class="upload-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10l8-6 8 6v9a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1v-9z"/></svg>
+          <div><div class="upload-name">Proof of address</div><div class="upload-hint">Utility bill or bank statement, last 3 months</div></div>
+        </div>
+        <div class="upload-status">Click to upload</div>
+      </div>
+
+      <div class="upload-row" id="doc3" data-doc="Source of funds declaration">
+        <div class="upload-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          <div><div class="upload-name">Source of funds declaration</div><div class="upload-hint">Signed template, provided after review</div></div>
+        </div>
+        <div class="upload-status">Click to upload</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-back" id="back4">Back</button>
+        <button class="btn btn-gold" id="next4">Continue to review</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: REVIEW -->
+    <div class="form-panel" id="panel5">
+      <h2>Review &amp; submit</h2>
+      <p class="sub">Confirm the details before this goes to an advisor for approval.</p>
+      <div class="review-block" id="reviewBlock"></div>
+      <div class="btn-row">
+        <button class="btn btn-back" id="back5">Back</button>
+        <button class="btn btn-gold" id="submitBtn">Submit for review</button>
+      </div>
+    </div>
+
+    <!-- CONFIRMATION -->
+    <div class="confirm-view" id="confirmView">
+      <div class="confirm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg></div>
+      <h2>Submitted for review</h2>
+      <p>The client record has been created and is now waiting on advisor approval in the console.</p>
+      <div class="confirm-id mono" id="confirmId"></div>
+      <div class="confirm-actions">
+        <a href="admin.html" class="btn btn-gold" style="text-align:center;">View in advisor console</a>
+        <a href="dashboard.html" class="btn btn-back" style="text-align:center;">View client dashboard</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const panels = ['panel1','panel2','panel3','panel4','panel5'];
+  const segs = ['seg1','seg2','seg3','seg4','seg5'];
+
+  function goTo(idx){
+    panels.forEach((p,i)=>document.getElementById(p).classList.toggle('active', i===idx));
+    segs.forEach((s,i)=>{
+      const el = document.getElementById(s);
+      el.classList.remove('active','done');
+      if(i<idx) el.classList.add('done');
+      else if(i===idx) el.classList.add('active');
+    });
+    document.getElementById('stepCounter').textContent = `Step ${idx+1} / 5`;
+  }
+
+  document.getElementById('next1').addEventListener('click', ()=>{
+    if(!document.getElementById('fName').value || !document.getElementById('fEmail').value){
+      document.getElementById('next1').textContent = 'Fill in name & email';
+      setTimeout(()=>{ document.getElementById('next1').textContent='Continue'; }, 1500);
+      return;
+    }
+    goTo(1);
+  });
+  document.getElementById('back2').addEventListener('click', ()=>goTo(0));
+
+  /* risk questionnaire */
+  let answers = {};
+  document.querySelectorAll('.option-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      const q = card.dataset.q;
+      document.querySelectorAll(`.option-card[data-q="${q}"]`).forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      answers[q] = parseInt(card.dataset.v);
+      if(answers.q1 && answers.q2){
+        const total = answers.q1 + answers.q2;
+        let label = 'Conservative';
+        if(total >= 7) label = 'Aggressive';
+        else if(total >= 5) label = 'Growth';
+        else if(total >= 3) label = 'Balanced';
+        document.getElementById('riskValue').textContent = label;
+        document.getElementById('riskResult').classList.add('show');
+        document.getElementById('next2').disabled = false;
+        window.riskProfile = label;
+      }
+    });
+  });
+  document.getElementById('next2').addEventListener('click', ()=>goTo(2));
+  document.getElementById('back3').addEventListener('click', ()=>goTo(1));
+
+  /* goals */
+  let goals = [];
+  document.querySelectorAll('.goal-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      chip.classList.toggle('selected');
+      const g = chip.dataset.goal;
+      if(chip.classList.contains('selected')) goals.push(g);
+      else goals = goals.filter(x=>x!==g);
+    });
+  });
+  document.getElementById('next3').addEventListener('click', ()=>goTo(3));
+  document.getElementById('back4').addEventListener('click', ()=>goTo(2));
+
+  /* documents */
+  let docsUploaded = {};
+  ['doc1','doc2','doc3'].forEach(id=>{
+    document.getElementById(id).addEventListener('click', function(){
+      this.classList.add('uploaded');
+      this.querySelector('.upload-status').textContent = 'Uploaded ✓';
+      docsUploaded[this.dataset.doc] = true;
+    });
+  });
+  document.getElementById('next4').addEventListener('click', ()=>{
+    buildReview();
+    goTo(4);
+  });
+  document.getElementById('back5').addEventListener('click', ()=>goTo(3));
+
+  function buildReview(){
+    const rows = [
+      ['Full name', document.getElementById('fName').value || '—'],
+      ['Email', document.getElementById('fEmail').value || '—'],
+      ['Phone', document.getElementById('fPhone').value || '—'],
+      ['Date of birth', document.getElementById('fDob').value || '—'],
+      ['Risk profile', window.riskProfile || '—'],
+      ['Goals', goals.length ? goals.join(', ') : '—'],
+      ['Initial deposit', document.getElementById('fDeposit').value ? 'R' + Number(document.getElementById('fDeposit').value).toLocaleString() : '—'],
+      ['Monthly contribution', document.getElementById('fMonthly').value ? 'R' + Number(document.getElementById('fMonthly').value).toLocaleString() : '—'],
+      ['Documents uploaded', Object.keys(docsUploaded).length + ' / 3']
+    ];
+    document.getElementById('reviewBlock').innerHTML = rows.map(([k,v])=>
+      `<div class="review-row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+    ).join('');
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', ()=>{
+    const clientId = 'MW-' + (10000 + Math.floor(Math.random()*8999));
+    const client = {
+      id: clientId,
+      name: document.getElementById('fName').value || 'Unnamed client',
+      email: document.getElementById('fEmail').value,
+      phone: document.getElementById('fPhone').value,
+      dob: document.getElementById('fDob').value,
+      idNumber: document.getElementById('fId').value,
+      address: document.getElementById('fAddress').value,
+      riskProfile: window.riskProfile || 'Balanced',
+      goals: goals,
+      initialDeposit: Number(document.getElementById('fDeposit').value) || 0,
+      monthlyContribution: Number(document.getElementById('fMonthly').value) || 0,
+      status: 'Pending review',
+      createdAt: new Date().toISOString()
+    };
+
+    let clients = [];
+    try{ clients = JSON.parse(localStorage.getItem('meridian_clients') || '[]'); }catch(e){ clients = []; }
+    clients.push(client);
+    localStorage.setItem('meridian_clients', JSON.stringify(clients));
+    localStorage.setItem('meridian_active_client', JSON.stringify(client));
+
+    document.getElementById('confirmId').textContent = `Client ID: ${clientId}  ·  Status: Pending review`;
+    document.querySelectorAll('.form-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('confirmView').classList.add('show');
+    document.querySelector('.progress-rail').style.display = 'none';
+    document.querySelector('.step-label').style.display = 'none';
+  });
+</script>
+
+</body>
+</html>

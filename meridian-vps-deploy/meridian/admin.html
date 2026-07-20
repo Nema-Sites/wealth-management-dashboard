@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian — Advisor Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-950:#0B1526; --navy-900:#101B30; --navy-800:#16233D;
+    --gold:#B8955C; --gold-light:#D9C29A; --gold-tint:#F3EDE1;
+    --bg:#F7F6F2; --card:#FFFFFF; --ink:#16233D; --muted:#6B7280; --line:#E5E3DC;
+    --success:#2F7D5C; --success-tint:#E6F0EA; --danger:#B54A3F; --danger-tint:#F7E9E6;
+    --warn:#B8863C; --warn-tint:#F5EBDA;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,.display{ font-family:'Newsreader',serif; letter-spacing:-0.01em; }
+  .mono{ font-family:'JetBrains Mono',monospace; }
+  a{ color:inherit; text-decoration:none; }
+  button{ font-family:'Inter'; }
+
+  .app{ display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
+
+  .sidebar{ background:var(--navy-950); color:#EFEDE6; padding:26px 20px; display:flex; flex-direction:column; }
+  .logo{ display:flex; align-items:center; gap:9px; font-size:17px; font-weight:600; font-family:'Newsreader',serif; color:#fff; margin-bottom:40px; padding:0 6px; }
+  .logo-mark{ width:19px; height:19px; border:1.5px solid var(--gold); transform:rotate(45deg); position:relative; }
+  .logo-mark::after{ content:""; position:absolute; inset:3px; background:var(--gold); }
+  .side-nav{ display:flex; flex-direction:column; gap:2px; }
+  .side-link{ padding:11px 12px; border-radius:6px; font-size:13.5px; color:rgba(239,237,230,0.65); display:flex; align-items:center; gap:11px; cursor:pointer; }
+  .side-link svg{ width:17px; height:17px; flex-shrink:0; }
+  .side-link:hover{ color:#fff; background:rgba(255,255,255,0.05); }
+  .side-link.active{ color:#fff; background:rgba(184,149,92,0.16); }
+  .side-foot{ margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); }
+  .side-foot a{ font-size:12.5px; color:rgba(239,237,230,0.5); }
+  .side-foot a:hover{ color:#fff; }
+
+  .main{ padding:34px 42px 60px; }
+  .topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
+  .topbar .greet{ font-size:12.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; margin-bottom:6px; }
+  .topbar h1{ font-size:28px; margin:0; font-weight:500; }
+  .btn{ font-size:13.5px; font-weight:600; padding:11px 20px; border-radius:5px; cursor:pointer; border:1px solid transparent; }
+  .btn-gold{ background:var(--gold); color:var(--navy-950); }
+  .btn-gold:hover{ background:#a5824c; }
+
+  .kpi-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:26px; }
+  .kpi{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:20px; }
+  .kpi .l{ font-size:12px; color:var(--muted); margin-bottom:8px; }
+  .kpi .n{ font-family:'Newsreader',serif; font-size:24px; font-weight:500; }
+  .kpi .n.alert{ color:var(--warn); }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  .panel{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:26px; margin-bottom:20px; }
+  .panel-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px; }
+  .panel h3{ font-size:16px; margin:0; font-weight:600; font-family:'Inter'; }
+
+  .controls-row{ display:flex; gap:10px; align-items:center; }
+  .search-box{ position:relative; }
+  .search-box input{ font-family:'Inter'; font-size:13px; padding:9px 12px 9px 32px; border-radius:6px; border:1px solid var(--line); background:var(--bg); width:200px; }
+  .search-box input:focus{ outline:none; border-color:var(--gold); }
+  .search-box svg{ position:absolute; left:10px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--muted); }
+  .filter-chip{ padding:7px 13px; border-radius:100px; border:1px solid var(--line); background:var(--bg); font-size:12px; font-weight:600; cursor:pointer; color:var(--muted); }
+  .filter-chip.active{ border-color:var(--gold); background:var(--gold-tint); color:#8A6A32; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); padding:0 10px 10px 0; font-weight:600; border-bottom:1px solid var(--line); }
+  td{ padding:13px 10px 13px 0; border-bottom:1px solid var(--line); }
+  tr:last-child td{ border-bottom:none; }
+  tr.client-row{ cursor:pointer; }
+  tr.client-row:hover{ background:var(--bg); }
+  .client-name{ font-weight:600; }
+  .client-email{ font-size:11.5px; color:var(--muted); font-family:'JetBrains Mono'; }
+  .badge{ font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:100px; text-transform:uppercase; letter-spacing:0.03em; display:inline-block; }
+  .badge.active{ background:var(--success-tint); color:var(--success); }
+  .badge.pending{ background:var(--warn-tint); color:var(--warn); }
+  .badge.flagged{ background:var(--danger-tint); color:var(--danger); }
+  .risk-tag{ font-size:11.5px; color:var(--navy-800); background:var(--bg); border:1px solid var(--line); padding:3px 9px; border-radius:100px; }
+
+  .compliance-list{ display:grid; gap:10px; }
+  .comp-item{ display:flex; align-items:center; gap:12px; padding:13px 14px; border:1px solid var(--line); border-radius:8px; }
+  .comp-item.warn{ border-color:var(--warn-tint); background:var(--warn-tint); }
+  .comp-item svg{ width:18px; height:18px; color:var(--warn); flex-shrink:0; }
+  .comp-item .ct{ font-size:13.5px; font-weight:600; }
+  .comp-item .cd{ font-size:12px; color:var(--muted); margin-top:2px; }
+
+  /* detail drawer */
+  .drawer-overlay{ position:fixed; inset:0; background:rgba(11,21,38,0.5); display:none; z-index:200; }
+  .drawer-overlay.show{ display:block; }
+  .drawer{ position:fixed; top:0; right:0; width:400px; max-width:92vw; height:100%; background:#fff; z-index:201;
+    transform:translateX(100%); transition:transform .25s ease; padding:30px; overflow-y:auto; }
+  .drawer.show{ transform:translateX(0); }
+  .drawer-close{ float:right; cursor:pointer; font-size:20px; color:var(--muted); }
+  .drawer h2{ font-size:22px; margin:20px 0 4px; }
+  .drawer .demail{ font-size:13px; color:var(--muted); margin-bottom:20px; font-family:'JetBrains Mono'; }
+  .drawer-row{ display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+  .drawer-row .k{ color:var(--muted); }
+  .drawer-row .v{ font-weight:600; text-align:right; }
+  .drawer-actions{ display:flex; gap:10px; margin-top:24px; }
+  .drawer-actions .btn{ flex:1; text-align:center; }
+  .btn-approve{ background:var(--success); color:#fff; }
+  .btn-flag{ background:transparent; border:1px solid var(--danger); color:var(--danger); }
+
+  @media (max-width:980px){
+    .app{ grid-template-columns:1fr; }
+    .sidebar{ display:none; }
+    .kpi-row{ grid-template-columns:1fr 1fr; }
+    table{ font-size:12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><span class="logo-mark"></span> Meridian</div>
+    <nav class="side-nav">
+      <div class="side-link active" data-view="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg> Overview</div>
+      <div class="side-link" data-view="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3 2.5-5.5 6.5-5.5S15.5 17 15.5 20M14 6a3 3 0 010 6M22 20c0-2.5-1.8-4.5-4.5-4.5"/></svg> Clients</div>
+      <div class="side-link" data-view="compliance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z"/></svg> Compliance</div>
+      <div class="side-link" data-view="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h16v16H4V4z"/><path d="M9 9h6v6H9V9z"/></svg> Reports</div>
+      <div class="side-link" data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87M4.6 15a1.7 1.7 0 00-.34-1.87"/></svg> Settings</div>
+    </nav>
+    <div class="side-foot"><a href="index.html">← Back to Meridian</a></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="greet" id="topGreet">Advisor console</div>
+        <h1 id="topHeading">Good morning, Advisor</h1>
+      </div>
+      <a href="onboarding.html" class="btn btn-gold">+ Onboard new client</a>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="view active" id="view-overview">
+      <div class="kpi-row">
+        <div class="kpi"><div class="l">Assets under management</div><div class="n">R2.41B</div></div>
+        <div class="kpi"><div class="l">Total client accounts</div><div class="n" id="kpiTotalClients">0</div></div>
+        <div class="kpi"><div class="l">Pending review</div><div class="n alert" id="kpiPending">0</div></div>
+        <div class="kpi"><div class="l">Compliance alerts</div><div class="n alert">2</div></div>
+      </div>
+      <div class="panel">
+        <h3 style="margin-bottom:16px;">Recent activity</h3>
+        <div class="compliance-list">
+          <div class="comp-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--success)"><path d="M5 13l4 4L19 7"/></svg>
+            <div><div class="ct">Johan Botha's Q2 statement was generated</div><div class="cd">2 hours ago · Reports</div></div></div>
+          <div class="comp-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--gold)"><circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3 2.5-5.5 6.5-5.5S15.5 17 15.5 20"/></svg>
+            <div><div class="ct">New client submitted onboarding</div><div class="cd">Awaiting your review in Clients</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENTS -->
+    <div class="view" id="view-clients">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Client accounts</h3>
+          <div class="controls-row">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input type="text" id="searchInput" placeholder="Search clients...">
+            </div>
+            <div class="filter-chip active" data-status="all">All</div>
+            <div class="filter-chip" data-status="Active">Active</div>
+            <div class="filter-chip" data-status="Pending review">Pending</div>
+            <div class="filter-chip" data-status="Flagged">Flagged</div>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Client</th><th>Risk profile</th><th>Portfolio value</th><th>Status</th></tr></thead>
+          <tbody id="clientTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- COMPLIANCE -->
+    <div class="view" id="view-compliance">
+      <div class="panel">
+        <h3 style="margin-bottom:16px;">Compliance alerts</h3>
+        <div class="compliance-list">
+          <div class="comp-item warn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 18a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+            <div><div class="ct">Northwind Retail — source of funds document expired</div><div class="cd">Flagged 3 days ago · requires re-upload</div></div>
+          </div>
+          <div class="comp-item warn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 18a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+            <div><div class="ct">2 accounts pending KYC review over 48 hours</div><div class="cd">SLA target is 24 hours for initial review</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="view" id="view-reports">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Generate a firm report</h3>
+          <div class="controls-row">
+            <select id="reportPeriod" style="font-family:'Inter';font-size:13px;padding:9px 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg);">
+              <option value="month">This month</option>
+              <option value="quarter">This quarter</option>
+              <option value="year">This year</option>
+            </select>
+            <button class="btn btn-gold" id="genReportBtn">Generate</button>
+          </div>
+        </div>
+        <div class="kpi-row" style="margin-bottom:0;">
+          <div class="kpi"><div class="l">Net inflows</div><div class="n" id="repInflows">R0</div></div>
+          <div class="kpi"><div class="l">Advisory fees earned</div><div class="n" id="repFees">R0</div></div>
+          <div class="kpi"><div class="l">New accounts opened</div><div class="n" id="repNewAccounts">0</div></div>
+          <div class="kpi"><div class="l">Avg. portfolio return</div><div class="n" id="repReturn">0%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="view" id="view-settings">
+      <div class="panel" style="max-width:480px;">
+        <h3 style="margin-bottom:18px;">Advisor profile</h3>
+        <div style="display:grid;gap:14px;">
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--navy-800);margin-bottom:6px;">Full name</label>
+            <input type="text" value="Advisor Account" style="width:100%;font-family:'Inter';font-size:14px;padding:11px 13px;border-radius:5px;border:1px solid var(--line);background:var(--bg);">
+          </div>
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--navy-800);margin-bottom:6px;">Notification email</label>
+            <input type="email" value="advisor@meridian.demo" style="width:100%;font-family:'Inter';font-size:14px;padding:11px 13px;border-radius:5px;border:1px solid var(--line);background:var(--bg);">
+          </div>
+          <div>
+            <label style="display:block;font-size:12.5px;font-weight:600;color:var(--navy-800);margin-bottom:6px;">SLA target for KYC review</label>
+            <select style="width:100%;font-family:'Inter';font-size:14px;padding:11px 13px;border-radius:5px;border:1px solid var(--line);background:var(--bg);">
+              <option>24 hours</option>
+              <option>48 hours</option>
+              <option>72 hours</option>
+            </select>
+          </div>
+          <button class="btn btn-gold" id="saveSettingsBtn" style="margin-top:6px;">Save changes</button>
+          <div id="settingsSaved" style="display:none;font-size:12.5px;color:var(--success);font-weight:600;">✓ Saved</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer" id="drawer">
+  <span class="drawer-close" id="drawerClose">&times;</span>
+  <div id="drawerContent"></div>
+</div>
+
+<script>
+  const seedClients = [
+    { id:'MW-40213', name:'Johan Botha', email:'johan.b@email.com', riskProfile:'Growth', value:1840000, status:'Active', goals:['Retirement','Wealth growth'], monthlyContribution:12000 },
+    { id:'MW-40198', name:'Aisha Patel', email:'aisha.p@email.com', riskProfile:'Balanced', value:920000, status:'Active', goals:['Education funding'], monthlyContribution:6500 },
+    { id:'MW-40187', name:'Northwind Retail (Pty) Ltd', email:'finance@northwind.co.za', riskProfile:'Conservative', value:3400000, status:'Flagged', goals:['Wealth growth'], monthlyContribution:0 },
+    { id:'MW-40176', name:'Kagiso Dlamini', email:'kagiso.d@email.com', riskProfile:'Aggressive', value:540000, status:'Active', goals:['Passive income'], monthlyContribution:9000 },
+    { id:'MW-40165', name:'Emma van der Merwe', email:'emma.vdm@email.com', riskProfile:'Growth', value:1120000, status:'Active', goals:['Retirement','Estate planning'], monthlyContribution:15000 },
+    { id:'MW-40150', name:'Sipho Nkosi', email:'sipho.n@email.com', riskProfile:'Balanced', value:680000, status:'Pending review', goals:['Major purchase'], monthlyContribution:4000 }
+  ];
+
+  let onboardedClients = [];
+  try{ onboardedClients = JSON.parse(localStorage.getItem('meridian_clients') || '[]'); }catch(e){}
+  const normalizedOnboarded = onboardedClients.map(c=>({
+    id: c.id, name: c.name, email: c.email, riskProfile: c.riskProfile || 'Balanced',
+    value: c.initialDeposit || 50000, status: c.status || 'Pending review',
+    goals: c.goals || [], monthlyContribution: c.monthlyContribution || 0
+  }));
+
+  const allClients = [...normalizedOnboarded, ...seedClients];
+
+  document.getElementById('kpiTotalClients').textContent = allClients.length;
+  document.getElementById('kpiPending').textContent = allClients.filter(c=>c.status==='Pending review').length;
+
+  const tbody = document.getElementById('clientTableBody');
+  let currentFilter = 'all';
+  let currentSearch = '';
+
+  function statusClass(s){
+    if(s==='Active') return 'active';
+    if(s==='Flagged') return 'flagged';
+    return 'pending';
+  }
+
+  function renderClients(){
+    const filtered = allClients.filter(c=>{
+      const matchesFilter = currentFilter==='all' || c.status===currentFilter;
+      const matchesSearch = c.name.toLowerCase().includes(currentSearch.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+    tbody.innerHTML = filtered.map((c,i)=>`
+      <tr class="client-row" data-idx="${allClients.indexOf(c)}">
+        <td><div class="client-name">${c.name}</div><div class="client-email">${c.email||'—'}</div></td>
+        <td><span class="risk-tag">${c.riskProfile}</span></td>
+        <td class="mono">R${(c.value||0).toLocaleString()}</td>
+        <td><span class="badge ${statusClass(c.status)}">${c.status}</span></td>
+      </tr>
+    `).join('') || `<tr><td colspan="4" style="color:var(--muted);padding:20px 0;">No clients match this filter.</td></tr>`;
+
+    document.querySelectorAll('.client-row').forEach(row=>{
+      row.addEventListener('click', ()=>openDrawer(allClients[row.dataset.idx]));
+    });
+  }
+  renderClients();
+
+  document.querySelectorAll('.filter-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      currentFilter = chip.dataset.status;
+      renderClients();
+    });
+  });
+  document.getElementById('searchInput').addEventListener('input', (e)=>{
+    currentSearch = e.target.value;
+    renderClients();
+  });
+
+  /* drawer */
+  const drawer = document.getElementById('drawer');
+  const overlay = document.getElementById('drawerOverlay');
+  function openDrawer(c){
+    document.getElementById('drawerContent').innerHTML = `
+      <h2>${c.name}</h2>
+      <div class="demail">${c.email || 'No email on file'}</div>
+      <div class="drawer-row"><span class="k">Client ID</span><span class="v">${c.id||'—'}</span></div>
+      <div class="drawer-row"><span class="k">Risk profile</span><span class="v">${c.riskProfile}</span></div>
+      <div class="drawer-row"><span class="k">Portfolio value</span><span class="v">R${(c.value||0).toLocaleString()}</span></div>
+      <div class="drawer-row"><span class="k">Monthly contribution</span><span class="v">R${(c.monthlyContribution||0).toLocaleString()}</span></div>
+      <div class="drawer-row"><span class="k">Goals</span><span class="v">${(c.goals&&c.goals.length)?c.goals.join(', '):'—'}</span></div>
+      <div class="drawer-row"><span class="k">Status</span><span class="v"><span class="badge ${statusClass(c.status)}">${c.status}</span></span></div>
+      <div class="drawer-actions">
+        <button class="btn btn-approve">Approve account</button>
+        <button class="btn btn-flag">Flag for review</button>
+      </div>
+    `;
+    drawer.classList.add('show');
+    overlay.classList.add('show');
+  }
+  function closeDrawer(){
+    drawer.classList.remove('show');
+    overlay.classList.remove('show');
+  }
+  document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
+
+  /* ---------------- sidebar view switching ---------------- */
+  const viewMeta = {
+    overview:   { heading:'Good morning, Advisor', greet:'Advisor console' },
+    clients:    { heading:'Client accounts', greet:'Advisor console' },
+    compliance: { heading:'Compliance', greet:'Advisor console' },
+    reports:    { heading:'Reports', greet:'Advisor console' },
+    settings:   { heading:'Settings', greet:'Advisor console' }
+  };
+  document.querySelectorAll('.side-link[data-view]').forEach(link=>{
+    link.addEventListener('click', ()=>{
+      const target = link.dataset.view;
+      document.querySelectorAll('.side-link[data-view]').forEach(l=>l.classList.remove('active'));
+      link.classList.add('active');
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById('view-'+target).classList.add('active');
+      document.getElementById('topHeading').textContent = viewMeta[target].heading;
+      document.getElementById('topGreet').textContent = viewMeta[target].greet;
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+
+  /* ---------------- report generator ---------------- */
+  const reportData = {
+    month:   { inflows:184000, fees:41200, accounts:6, ret:2.1 },
+    quarter: { inflows:612000, fees:118400, accounts:19, ret:6.4 },
+    year:    { inflows:2340000, fees:452000, accounts:74, ret:11.4 }
+  };
+  function animateNum(el, target, isCurrency, isPct, duration){
+    const start = performance.now();
+    function tick(now){
+      const p = Math.min((now-start)/duration,1);
+      const eased = 1-Math.pow(1-p,3);
+      const val = target*eased;
+      if(isCurrency) el.textContent = 'R' + Math.round(val).toLocaleString();
+      else if(isPct) el.textContent = val.toFixed(1) + '%';
+      else el.textContent = Math.round(val);
+      if(p<1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  document.getElementById('genReportBtn').addEventListener('click', ()=>{
+    const d = reportData[document.getElementById('reportPeriod').value];
+    animateNum(document.getElementById('repInflows'), d.inflows, true, false, 900);
+    animateNum(document.getElementById('repFees'), d.fees, true, false, 900);
+    animateNum(document.getElementById('repNewAccounts'), d.accounts, false, false, 900);
+    animateNum(document.getElementById('repReturn'), d.ret, false, true, 900);
+  });
+
+  /* ---------------- settings save ---------------- */
+  document.getElementById('saveSettingsBtn').addEventListener('click', ()=>{
+    const saved = document.getElementById('settingsSaved');
+    saved.style.display = 'block';
+    setTimeout(()=>{ saved.style.display = 'none'; }, 2200);
+  });
+</script>
+
+</body>
+</html>
